@@ -25,9 +25,11 @@ HashedControlPassword $TOR_HASHED_PASSWORD
   TOR_USER="debian-tor"
 
   install --owner="$TOR_USER" --mode=700 --directory /var/lib/tor/lnd-{10009,8080}
-  systemctl enable --now tor
-
+  systemctl restart tor
   sleep 1
+  systemctl enable --now tor
+  sleep 1
+
   LND_TOR_HOSTNAME=$(cat /var/lib/tor/lnd-8080/hostname)
   LND_SOCKET_TOR_HOSTNAME=$(cat /var/lib/tor/lnd-10009/hostname)
 
