@@ -13,3 +13,7 @@ apt install npm
 
 echo "install pm2"
 npm install -g pm2
+
+echo "Adding startup script..."
+cp lnd/lnd.service /etc/systemd/system/lnd.service
+

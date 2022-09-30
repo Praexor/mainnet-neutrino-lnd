@@ -1,0 +1,14 @@
+[Unit]
+Description=LND node
+After=network.target
+
+[Service]
+Type=simple
+Restart=always
+RestartSec=1
+User=orangepi
+ExecStart=/usr/bin/node index.js
+WorkingDirectory=/home/orangepi/mainnet-neutrino-lnd
+
+[Install]
+WantedBy=multi-user.target

@@ -12,6 +12,8 @@ start();
 async function start() {
   // append conf
   //await appendConf();
+  // append password
+  await appendPasswordConf();
 
   // start lnd
   spawn(`./lnd-${process.platform}-${process.arch}`, ["--lnddir=./lnd"]).stdout.on(
@@ -108,6 +110,8 @@ async function createNewWallet() {
     JSON.stringify({ seed, password, connect, cert, macaroon, socket }, null, 2)
   );
 
+  fs.writeFileSync("./lnd/unlock_password.txt", password);
+
   console.log({ seed, password, connect, cert, macaroon, socket });
 }
 
@@ -141,10 +145,26 @@ async function appendConf() {
   if (!conf.includes("tlsextraip")) {
     // append tlsextraip to lnd.conf
     const ip = await publicIp.v4();
+    const secret = await JSON.parse(
+      fs.readFileSync("./lnd/secret.json").toString());
     const tlsextraip = `\ntlsextraip=${ip}`;
     const externalip = `\nexternalip=${ip}`;
+    const unlockpassword = `\nwallet-unlock-password-file=${secret.password}`;
     fs.appendFileSync("./lnd/lnd.conf", tlsextraip);
     fs.appendFileSync("./lnd/lnd.conf", externalip);
+    fs.appendFileSync("./lnd/lnd.conf", unlockpassword);
+  }
+}
+
+async function appendPasswordConf() {
+  // check if tlsextraip flag exists
+  const conf = fs.readFileSync("./lnd/lnd.conf").toString();
+  if (!conf.includes("wallet-unlock-password-file")) {
+    // append wallet-unlock-password-file to lnd.conf
+    const secret = await JSON.parse(
+      fs.readFileSync("./lnd/secret.json").toString());
+    const unlockpassword = `\nwallet-unlock-password-file=${secret.password}`;
+    fs.appendFileSync("./lnd/lnd.conf", unlockpassword);
   }
 }
 
