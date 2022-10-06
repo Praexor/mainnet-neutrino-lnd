@@ -13,7 +13,6 @@ async function start() {
   // append conf
   //await appendConf();
   // append password
-  await appendPasswordConf();
 
   // start lnd
   spawn(`./lnd-${process.platform}-${process.arch}`, ["--lnddir=./lnd"]).stdout.on(
@@ -28,10 +27,12 @@ async function start() {
 
   // check if wallet exists
   if (fs.existsSync("./lnd/data/chain/bitcoin/mainnet/wallet.db")) {
-    unlockExistingWallet();
+    // No more needed: done automatically via config
+    //unlockExistingWallet();
   } else {
     createNewWallet();
   }
+  appendPasswordConf();
 }
 
 async function unlockExistingWallet() {
@@ -149,23 +150,28 @@ async function appendConf() {
       fs.readFileSync("./lnd/secret.json").toString());
     const tlsextraip = `\ntlsextraip=${ip}`;
     const externalip = `\nexternalip=${ip}`;
-    const unlockpassword = `\nwallet-unlock-password-file=${secret.password}`;
+    //const unlockpassword = `\nwallet-unlock-password-file=${secret.password}`;
     fs.appendFileSync("./lnd/lnd.conf", tlsextraip);
     fs.appendFileSync("./lnd/lnd.conf", externalip);
-    fs.appendFileSync("./lnd/lnd.conf", unlockpassword);
+    //fs.appendFileSync("./lnd/lnd.conf", unlockpassword);
   }
 }
 
 async function appendPasswordConf() {
-  // check if tlsextraip flag exists
-  const conf = fs.readFileSync("./lnd/lnd.conf").toString();
-  if (!conf.includes("wallet-unlock-password-file")) {
-    // append wallet-unlock-password-file to lnd.conf
+    await pause(20000);
+    const conf = fs.readFileSync("./lnd/lnd.conf");
     const secret = await JSON.parse(
       fs.readFileSync("./lnd/secret.json").toString());
-    const unlockpassword = `\nwallet-unlock-password-file=${secret.password}`;
-    fs.appendFileSync("./lnd/lnd.conf", unlockpassword);
-  }
+    fs.writeFileSync("./lnd/unlock_password.txt", secret.password);
+    if (!conf.toString().includes("wallet-unlock-password-file")) {
+      const fd = fs.openSync('./lnd/lnd.conf', 'w+')
+      const insert = Buffer.from("wallet-unlock-password-file=./lnd/unlock_password.txt\n")
+      fs.writeSync(fd, insert, 0, insert.length, 0)
+      fs.writeSync(fd, conf, 0, conf.length, insert.length)
+      fs.close(fd, (err) => {
+        if (err) throw err;
+      });
+    }
 }
 
 function pause(ms) {
