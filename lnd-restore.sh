@@ -34,17 +34,46 @@ else
 fi
 
 if [[ -d "$DESTINATION_DIR" ]]; then
-  echo "Found destination directory: $DESTINATION_DIR"
-  dest_dir_num_files=$(find "$DESTINATION_DIR" -type -f | wc -l)
-  if [[ "$dest_dir_num_files" -gt 5 ]];
-  then
-    echo "The $DESTINATION_DIR directory seems to be populated (has more than 5 files). Please remove it (rm -rf \"$DESTINATION_DIR\") to restore."
-    exit 1
-  fi
+  echo "The $DESTINATION_DIR directory seems to be existing. Please remove it (rm -rf \"$DESTINATION_DIR\") to restore."
+  exit 1
 else
   mkdir "$DESTINATION_DIR"
 fi
 
 echo "Restoring $backup_path to $DESTINATION_DIR"
 rsync -a "$backup_path"/. "$DESTINATION_DIR"/.
-echo "Done! You may now start your node with \"systemctl start lnd\""
+
+if [[ -f "$DESTINATION_DIR"/tor/torrc ]]; then
+  which tor > /dev/null || apt-get install -y tor
+  sudo systemctl stop tor || true
+  echo "torrc found, restoring to /etc/tor/torrc"
+  if [[ -f /etc/tor/torrc ]];
+  then
+    backup_filename="/etc/tor/torrc.$(date +%y-%m-%d-%H%M%S).bak"
+    echo "Warning! /etc/tor/torrc is already exists."
+    echo "Backing up to: $backup_filename"
+    mv /etc/tor/torrc "$backup_filename"
+  fi
+  echo "copying torrc from backup"
+  install -o debian-tor -g debian-tor -m 0600 "$DESTINATION_DIR"/tor/torrc /etc/tor/torrc
+fi
+
+if [[ -d "$DESTINATION_DIR"/tor/tor ]]; then
+  echo "tor data directory found, restoring to /var/lib/tor"
+  if [[ -d /var/lib/tor ]];
+  then
+    backup_filename="/var/lib/tor.$(date +%y-%m-%d-%H%M%S).bak"
+    echo "Warning! /var/lib/tor is already exists."
+    echo "Backing up to: $backup_filename"
+    mv /var/lib/tor "$backup_filename"
+  fi
+  echo "copying tor data from backup"
+  cp -r "$DESTINATION_DIR"/tor/tor /var/lib/tor
+  chown -R debian-tor /var/lib/tor
+  find /var/lib/tor -type d -exec chmod 700 {} \+
+  find /var/lib/tor -type f -exec chmod 600 {} \+
+fi
+
+sudo systemctl start tor || true
+
+echo "Done! You may now do test run: node index.js"

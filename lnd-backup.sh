@@ -44,7 +44,11 @@ if [[ ! pgrep_exit -eq 0 ]]; then
     --exclude=reg_filter_headers.bin \
     --exclude=lnd.log \
     -a "${SOURCE_DIR}"/. "${BACKUP_TMP}"/.
-  cp -r /var/lib/tor /etc/tor/torrc ${BACKUP_TMP}/.
+  if [[ -d /var/lib/tor ]];
+  then
+    mkdir "${BACKUP_TMP}"/tor
+    cp -r /var/lib/tor /etc/tor/torrc "${BACKUP_TMP}"/tor/
+  fi
   echo "Done to temporary directory! Starting LND back..."
   systemctl start lnd
   echo "LND looks started back"
@@ -59,7 +63,7 @@ if [[ ! pgrep_exit -eq 0 ]]; then
 
     backups_found=$(ls -rt "${backup_path}/.." | wc -l)
     if [[ $backups_found -gt $KEEP_BACKUPS ]]; then
-      dir_to_rm=$(ls -t "${backup_path}/.." | head -1)
+      dir_to_rm=$(ls -t "${backup_path}/.." | tail -1)
       echo "removing old backup directory (keeping up to $KEEP_BACKUPS): $dir_to_rm"
       rm -rf "$dir_to_rm"
     fi

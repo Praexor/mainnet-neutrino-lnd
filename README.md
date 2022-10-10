@@ -20,13 +20,19 @@ A quick way to host a mainnet ln node without syncing the whole blockchain. Crea
 
 `npm install`
 
+## (Optional) Restore wallet from backup:
+
+You may insert USB key with your backup (should appear as a `/media/*/*/lnd_backup` directory), then run:
+
+`bash lnd-restore.sh`
+
 ## Start lnd
 
 `node index.js`
 
 or start lnd as daemon
 
-`pm2 start index.js`
+`systemctl start lnd`
 
 ## Display secret to connect to zap or zeus wallet
 
@@ -60,6 +66,13 @@ Linux
 OSX
 
 `./lncli-darwin --lnddir ./lnd getinfo`
+
+## Backup your node
+
+Insert a USB key having the `lnd_backup` directory, so it appears under `/media/USERNAME/DRIVE_NAME/` directory.
+Then run:
+
+`bash lnd-backup.sh`
 
 ## Note
 
