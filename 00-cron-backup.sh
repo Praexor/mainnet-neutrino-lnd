@@ -2,3 +2,6 @@
 set -e
 
 cd /home/orangepi/mainnet-neutrino-lnd
+
+bash lnd-backup.sh
+
